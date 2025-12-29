@@ -95,7 +95,7 @@ class ContributionController extends Controller
         $daret = $contribution->daret;
         $cycle = $contribution->cycle;
 
-        if (! $this->userCanConfirmOrReject($user->id, $daret)) {
+        if (! $this->userCanConfirmOrReject($user->id, $daret, $cycle)) {
             abort(403);
         }
 
@@ -144,8 +144,9 @@ class ContributionController extends Controller
     {
         $user = $request->user();
         $daret = $contribution->daret;
+        $cycle = $contribution->cycle;
 
-        if (! $this->userCanConfirmOrReject($user->id, $daret)) {
+        if (! $this->userCanConfirmOrReject($user->id, $daret, $cycle)) {
             abort(403);
         }
 
@@ -180,9 +181,25 @@ class ContributionController extends Controller
         return $user && $user->hasRole('admin');
     }
 
-    protected function userCanConfirmOrReject(int $userId, Daret $daret): bool
+    protected function userCanConfirmOrReject(int $userId, Daret $daret, ?DaretCycle $cycle = null): bool
     {
-        return $this->userCanAccessDaret($userId, $daret);
+        // Admin can always confirm/reject
+        $user = Auth::user();
+        if ($user && $user->hasRole('admin')) {
+            return true;
+        }
+
+        // Daret owner can confirm/reject
+        if ($daret->owner_id === $userId) {
+            return true;
+        }
+
+        // Cycle recipient can confirm/reject
+        if ($cycle && $cycle->recipient_id === $userId) {
+            return true;
+        }
+
+        return false;
     }
 
     public function viewReceipt(Request $request, Contribution $contribution): StreamedResponse

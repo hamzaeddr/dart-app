@@ -131,8 +131,8 @@
                 <div class="divide-y divide-gray-100">
                     @php
                         $contributionsByUser = $cycle->contributions->keyBy('user_id');
-                        $canModerate = auth()->user()->hasRole('admin') || $daret->owner_id === auth()->id();
                         $isRecipient = $cycle->recipient_id === auth()->id();
+                        $canModerate = auth()->user()->hasRole('admin') || $daret->owner_id === auth()->id() || $isRecipient;
                     @endphp
                     
                     @foreach ($members as $member)
