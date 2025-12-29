@@ -92,7 +92,7 @@
                             </div>
                             <div>
                                 <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">{{ __('Contribution') }}</p>
-                                <p class="text-lg font-bold text-gray-800">{{ number_format($daret->contribution_amount, 2) }} MAD</p>
+                                <p class="text-lg font-bold text-gray-800">{{ number_format($daret->contribution_amount, 2) }} EUR</p>
                                 <p class="text-xs text-gray-500">{{ __('per member') }}</p>
                             </div>
                         </div>
