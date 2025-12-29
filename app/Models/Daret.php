@@ -63,6 +63,11 @@ class Daret extends Model
         return $this->hasMany(Contribution::class);
     }
 
+    public function messages()
+    {
+        return $this->hasMany(Message::class);
+    }
+
     /**
      * Generate the cycle schedule and recipients once the daret is full.
      * Shuffles member positions randomly before generating cycles.

@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DaretController;
 use App\Http\Controllers\ContributionController;
+use App\Http\Controllers\MessageController;
 use App\Http\Controllers\Admin\AdminController;
 use Illuminate\Support\Facades\Route;
 
@@ -38,6 +39,9 @@ Route::middleware(['auth'])->group(function () {
         ->name('contributions.reject');
     Route::get('/contributions/{contribution}/receipt', [ContributionController::class, 'viewReceipt'])
         ->name('contributions.receipt');
+
+    Route::get('/darets/{daret}/messages', [MessageController::class, 'index'])->name('darets.messages.index');
+    Route::post('/darets/{daret}/messages', [MessageController::class, 'store'])->name('darets.messages.store');
 });
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {

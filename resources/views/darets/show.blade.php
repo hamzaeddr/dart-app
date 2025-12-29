@@ -181,6 +181,136 @@
                     </div>
                 </div>
             @endif
+
+            {{-- Chat Section --}}
+            @if ($daret->members->contains('user_id', auth()->id()) || $daret->owner_id === auth()->id())
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 text-gray-900">
+                        <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                            </svg>
+                            {{ __('Group Chat') }}
+                        </h3>
+                        
+                        <div id="chat-container" class="border border-gray-200 rounded-lg">
+                            <div id="chat-messages" class="h-64 overflow-y-auto p-4 space-y-3 bg-gray-50">
+                                <div class="text-center text-gray-400 text-sm">{{ __('Loading messages...') }}</div>
+                            </div>
+                            
+                            <div class="border-t border-gray-200 p-3 bg-white rounded-b-lg">
+                                <form id="chat-form" class="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        id="chat-input" 
+                                        placeholder="{{ __('Type a message...') }}" 
+                                        class="flex-1 border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                                        maxlength="1000"
+                                        autocomplete="off"
+                                    />
+                                    <button 
+                                        type="submit" 
+                                        class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const messagesContainer = document.getElementById('chat-messages');
+                        const chatForm = document.getElementById('chat-form');
+                        const chatInput = document.getElementById('chat-input');
+                        const daretId = {{ $daret->id }};
+                        const currentUserId = {{ auth()->id() }};
+                        let lastMessageId = 0;
+
+                        function formatTime(dateString) {
+                            const date = new Date(dateString);
+                            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        }
+
+                        function renderMessages(messages) {
+                            if (messages.length === 0) {
+                                messagesContainer.innerHTML = '<div class="text-center text-gray-400 text-sm">{{ __("No messages yet. Start the conversation!") }}</div>';
+                                return;
+                            }
+
+                            messagesContainer.innerHTML = messages.map(msg => {
+                                const isOwn = msg.user_id === currentUserId;
+                                return `
+                                    <div class="flex ${isOwn ? 'justify-end' : 'justify-start'}">
+                                        <div class="max-w-xs lg:max-w-md ${isOwn ? 'bg-indigo-500 text-white' : 'bg-white border border-gray-200'} rounded-lg px-3 py-2 shadow-sm">
+                                            ${!isOwn ? `<div class="text-xs font-semibold text-indigo-600 mb-1">${msg.user.name}</div>` : ''}
+                                            <div class="text-sm ${isOwn ? 'text-white' : 'text-gray-800'}">${msg.body}</div>
+                                            <div class="text-xs ${isOwn ? 'text-indigo-200' : 'text-gray-400'} mt-1">${formatTime(msg.created_at)}</div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('');
+
+                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                            if (messages.length > 0) {
+                                lastMessageId = messages[messages.length - 1].id;
+                            }
+                        }
+
+                        function loadMessages() {
+                            fetch(`/darets/${daretId}/messages`, {
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(messages => renderMessages(messages))
+                            .catch(err => {
+                                messagesContainer.innerHTML = '<div class="text-center text-red-400 text-sm">{{ __("Failed to load messages") }}</div>';
+                            });
+                        }
+
+                        chatForm.addEventListener('submit', function(e) {
+                            e.preventDefault();
+                            const body = chatInput.value.trim();
+                            if (!body) return;
+
+                            chatInput.disabled = true;
+
+                            fetch(`/darets/${daretId}/messages`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                body: JSON.stringify({ body: body })
+                            })
+                            .then(response => response.json())
+                            .then(msg => {
+                                chatInput.value = '';
+                                loadMessages();
+                            })
+                            .catch(err => {
+                                alert('{{ __("Failed to send message") }}');
+                            })
+                            .finally(() => {
+                                chatInput.disabled = false;
+                                chatInput.focus();
+                            });
+                        });
+
+                        loadMessages();
+                        setInterval(loadMessages, 5000);
+                    });
+                </script>
+            @endif
         </div>
     </div>
 </x-app-layout>
