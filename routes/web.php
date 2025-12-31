@@ -8,7 +8,7 @@ use App\Http\Controllers\Admin\AdminController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
 
 Route::get('/dashboard', function () {
@@ -28,6 +28,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/darets/{daret}/join', [DaretController::class, 'join'])->name('darets.join');
     Route::post('/darets/{daret}/add-member', [DaretController::class, 'addMember'])->name('darets.add-member');
     Route::post('/darets/{daret}/update-recipient-order', [DaretController::class, 'updateRecipientOrder'])->name('darets.update-recipient-order');
+    Route::delete('/darets/{daret}', [DaretController::class, 'destroy'])->name('darets.destroy');
 
     Route::get('/darets/{daret}/cycles/{cycle}', [ContributionController::class, 'showCycle'])
         ->name('darets.cycles.show');

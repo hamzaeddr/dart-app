@@ -55,6 +55,21 @@
                             <div class="bg-indigo-500 h-2 rounded-full" style="width: {{ $progress }}%"></div>
                         </div>
                     </div>
+
+                    @if ($user->hasRole('admin'))
+                        <div class="pt-4 border-t border-gray-200">
+                            <form method="POST" action="{{ route('darets.destroy', $daret) }}" onsubmit="return confirm('{{ __('Are you sure you want to delete this daret? This action cannot be undone.') }}');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                    {{ __('Delete Daret') }}
+                                </button>
+                            </form>
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -123,6 +138,81 @@
                                 </span>
                             </div>
                         </form>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Admin: Reorder Cycles --}}
+            @if ($user->hasRole('admin') && $cycles->count() > 0)
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 text-gray-900">
+                        <h3 class="font-semibold text-lg mb-4">{{ __('Reorder Cycle Recipients') }}</h3>
+                        <p class="text-sm text-gray-500 mb-4">{{ __('Drag and drop to change the order of recipients.') }}</p>
+                        
+                        <form method="POST" action="{{ route('darets.update-recipient-order', $daret) }}" id="reorder-form">
+                            @csrf
+                            <ul id="sortable-members" class="space-y-2 mb-4">
+                                @foreach ($daret->members->sortBy('position_in_cycle') as $member)
+                                    <li class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-move hover:bg-gray-100" data-user-id="{{ $member->user_id }}">
+                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                                        </svg>
+                                        <span class="font-medium">{{ $member->user->name }}</span>
+                                        <span class="text-xs text-gray-400 ml-auto">{{ __('Position') }} #<span class="position-number">{{ $member->position_in_cycle }}</span></span>
+                                        <input type="hidden" name="user_ids[]" value="{{ $member->user_id }}">
+                                    </li>
+                                @endforeach
+                            </ul>
+                            <x-primary-button type="submit">
+                                {{ __('Save Order') }}
+                            </x-primary-button>
+                        </form>
+
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const sortable = document.getElementById('sortable-members');
+                                let draggedItem = null;
+
+                                sortable.querySelectorAll('li').forEach(item => {
+                                    item.addEventListener('dragstart', function(e) {
+                                        draggedItem = this;
+                                        this.classList.add('opacity-50');
+                                    });
+
+                                    item.addEventListener('dragend', function(e) {
+                                        this.classList.remove('opacity-50');
+                                        updatePositionNumbers();
+                                    });
+
+                                    item.addEventListener('dragover', function(e) {
+                                        e.preventDefault();
+                                    });
+
+                                    item.addEventListener('drop', function(e) {
+                                        e.preventDefault();
+                                        if (this !== draggedItem) {
+                                            const allItems = [...sortable.querySelectorAll('li')];
+                                            const draggedIndex = allItems.indexOf(draggedItem);
+                                            const droppedIndex = allItems.indexOf(this);
+                                            
+                                            if (draggedIndex < droppedIndex) {
+                                                this.parentNode.insertBefore(draggedItem, this.nextSibling);
+                                            } else {
+                                                this.parentNode.insertBefore(draggedItem, this);
+                                            }
+                                        }
+                                    });
+
+                                    item.setAttribute('draggable', 'true');
+                                });
+
+                                function updatePositionNumbers() {
+                                    sortable.querySelectorAll('li').forEach((item, index) => {
+                                        item.querySelector('.position-number').textContent = index + 1;
+                                    });
+                                }
+                            });
+                        </script>
                     </div>
                 </div>
             @endif

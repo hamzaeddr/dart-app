@@ -32,9 +32,11 @@ class ProfileController extends Controller
 
 	public function show(User $user): View
 	{
-		$profile = Profile::firstOrCreate([
-			'user_id' => $user->id,
-		]);
+		$profile = Profile::where('user_id', $user->id)->first();
+
+		if (! $profile) {
+			$profile = Profile::create(['user_id' => $user->id]);
+		}
 
 		return view('profile.show', [
 			'user' => $user,
@@ -70,6 +72,7 @@ class ProfileController extends Controller
             'phone' => $validated['phone'] ?? null,
             'city' => $validated['city'] ?? null,
             'bio' => $validated['bio'] ?? null,
+            'revolut_link' => $validated['revolut_link'] ?? null,
         ]);
 
         $profile->save();

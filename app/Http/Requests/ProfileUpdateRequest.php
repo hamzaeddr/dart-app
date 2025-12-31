@@ -30,6 +30,7 @@ class ProfileUpdateRequest extends FormRequest
             'bio' => ['nullable', 'string', 'max:1000'],
             'avatar' => ['nullable', 'image', 'max:2048'],
             'revolut_qr' => ['nullable', 'image', 'max:2048'],
+            'revolut_link' => ['nullable', 'string', 'url', 'max:255'],
         ];
     }
 }

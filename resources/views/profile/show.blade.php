@@ -43,6 +43,7 @@
                         @if ($profile->bio)
                             <p class="text-sm text-gray-700 whitespace-pre-line">{{ $profile->bio }}</p>
                         @endif
+
                     </div>
                 </div>
             </div>
@@ -51,16 +52,30 @@
                 $revolutQr = $profile->getFirstMediaUrl('revolut_qr');
             @endphp
 
-            @if ($revolutQr)
+            @if ($revolutQr || $profile->revolut_link)
                 <div class="bg-white/90 overflow-hidden shadow-sm sm:rounded-2xl border border-slate-100">
                     <div class="p-6 sm:p-8 text-gray-900">
-                        <h3 class="font-semibold text-lg mb-3">{{ __('Revolut QR Code') }}</h3>
+                        <h3 class="font-semibold text-lg mb-3">{{ __('Revolut Payment') }}</h3>
                         <p class="text-sm text-gray-600 mb-3">
-                            {{ __('Scan this QR code to send money to this member.') }}
+                            {{ __('Send money to this member via Revolut.') }}
                         </p>
-                        <div class="border rounded-xl inline-block bg-white p-3">
-                            <img src="{{ $revolutQr }}" alt="Revolut QR" class="h-56 w-56 object-contain" />
-                        </div>
+                        
+                        @if ($revolutQr)
+                            <div class="border rounded-xl inline-block bg-white p-3 mb-4">
+                                <img src="{{ $revolutQr }}" alt="Revolut QR" class="h-56 w-56 object-contain" />
+                            </div>
+                        @endif
+
+                        @if ($profile->revolut_link)
+                            <div class="mt-3">
+                                <a href="{{ $profile->revolut_link }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-5 py-3 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-md">
+                                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                    </svg>
+                                    {{ __('Pay with Revolut') }}
+                                </a>
+                            </div>
+                        @endif
                     </div>
                 </div>
             @endif

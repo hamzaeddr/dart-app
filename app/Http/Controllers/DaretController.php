@@ -215,6 +215,19 @@ class DaretController extends Controller
             ->with('status', 'Recipient order updated successfully.');
     }
 
+    public function destroy(Request $request, Daret $daret): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (! $user->hasRole('admin')) {
+            abort(403, 'Only admins can delete darets.');
+        }
+
+        $daret->delete();
+
+        return redirect()->route('darets.index')->with('status', 'Daret deleted successfully.');
+    }
+
     protected function userCanAccessDaret(int $userId, Daret $daret): bool
     {
         if ($daret->owner_id === $userId) {

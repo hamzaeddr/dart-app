@@ -21,6 +21,7 @@ class Profile extends Model implements HasMedia
         'phone',
         'city',
         'bio',
+        'revolut_link',
     ];
 
     public function user()
