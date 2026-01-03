@@ -57,7 +57,39 @@
                     </div>
 
                     @if ($user->hasRole('admin'))
-                        <div class="pt-4 border-t border-gray-200">
+                        <div class="pt-4 border-t border-gray-200 space-y-4">
+                            <h4 class="font-medium text-sm text-gray-700">{{ __('Admin Settings') }}</h4>
+                            
+                            <form method="POST" action="{{ route('darets.update', $daret) }}" class="flex flex-wrap gap-4 items-end">
+                                @csrf
+                                @method('PATCH')
+                                
+                                <div>
+                                    <x-input-label for="contribution_amount" :value="__('Contribution Amount')" />
+                                    <x-text-input 
+                                        id="contribution_amount" 
+                                        name="contribution_amount" 
+                                        type="number" 
+                                        step="0.01" 
+                                        min="0.01"
+                                        class="mt-1 block w-32" 
+                                        :value="$daret->contribution_amount" 
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <x-input-label for="period" :value="__('Period')" />
+                                    <select id="period" name="period" class="mt-1 block border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                        <option value="weekly" {{ $daret->period === 'weekly' ? 'selected' : '' }}>{{ __('Weekly') }}</option>
+                                        <option value="monthly" {{ $daret->period === 'monthly' ? 'selected' : '' }}>{{ __('Monthly') }}</option>
+                                    </select>
+                                </div>
+                                
+                                <x-primary-button>
+                                    {{ __('Update') }}
+                                </x-primary-button>
+                            </form>
+
                             <form method="POST" action="{{ route('darets.destroy', $daret) }}" onsubmit="return confirm('{{ __('Are you sure you want to delete this daret? This action cannot be undone.') }}');">
                                 @csrf
                                 @method('DELETE')
@@ -78,39 +110,69 @@
                     <h3 class="font-semibold text-lg mb-4">{{ __('Members') }}</h3>
                     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         @foreach ($daret->members as $member)
-                            <a href="{{ route('profiles.show', $member->user) }}" class="border border-gray-100 rounded-lg p-3 flex gap-3 items-center hover:border-indigo-200 hover:bg-indigo-50 transition">
+                            <div class="border border-gray-100 rounded-lg p-3 flex gap-3 items-center hover:border-indigo-200 hover:bg-indigo-50 transition relative group">
                                 @php
                                     $profile = $member->user->profile ?? null;
                                     $avatar = $profile ? $profile->getFirstMediaUrl('avatar') : null;
+                                    $isOwner = $member->user_id === $daret->owner_id;
                                 @endphp
-                                <div>
-                                    @if ($avatar)
-                                        <img src="{{ $avatar }}" alt="Avatar" class="h-10 w-10 rounded-full object-cover border" />
-                                    @else
-                                        <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold">
-                                            {{ strtoupper(substr($member->user->name, 0, 1)) }}
-                                        </div>
-                                    @endif
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="font-semibold text-sm text-gray-900 truncate">{{ $member->user->name }}</div>
-                                    @if ($profile && $profile->city)
-                                        <div class="text-xs text-gray-500 truncate">{{ $profile->city }}</div>
-                                    @endif
-                                    <div class="text-xs text-gray-400 mt-1">
-                                        {{ __('Position') }} #{{ $member->position_in_cycle }}
+                                <a href="{{ route('profiles.show', $member->user) }}" class="flex gap-3 items-center flex-1 min-w-0">
+                                    <div>
+                                        @if ($avatar)
+                                            <img src="{{ $avatar }}" alt="Avatar" class="h-10 w-10 rounded-full object-cover border" />
+                                        @else
+                                            <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold">
+                                                {{ strtoupper(substr($member->user->name, 0, 1)) }}
+                                            </div>
+                                        @endif
                                     </div>
-                                </div>
-                            </a>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-semibold text-sm text-gray-900 truncate">
+                                            {{ $member->user->name }}
+                                            @if ($isOwner)
+                                                <span class="text-xs text-indigo-500">({{ __('Owner') }})</span>
+                                            @endif
+                                        </div>
+                                        @if ($profile && $profile->city)
+                                            <div class="text-xs text-gray-500 truncate">{{ $profile->city }}</div>
+                                        @endif
+                                        <div class="text-xs text-gray-400 mt-1">
+                                            {{ __('Position') }} #{{ $member->position_in_cycle }}
+                                        </div>
+                                    </div>
+                                </a>
+                                @if ($user->hasRole('admin') && !$isOwner)
+                                    <form method="POST" action="{{ route('darets.remove-member', [$daret, $member->user]) }}" onsubmit="return confirm('{{ __('Remove this member from the daret?') }}');" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded" title="{{ __('Remove member') }}">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
                         @endforeach
                     </div>
                 </div>
             </div>
 
-            @if (($user->id === $daret->owner_id || $user->hasRole('admin')) && $daret->status === 'active' && $daret->members->count() < $daret->total_members)
+            @php
+                $canAddMember = ($user->id === $daret->owner_id || $user->hasRole('admin')) && $daret->status === 'active';
+                $hasSpots = $daret->members->count() < $daret->total_members;
+                $isAdmin = $user->hasRole('admin');
+            @endphp
+            @if ($canAddMember && ($hasSpots || $isAdmin))
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900">
                         <h3 class="font-semibold text-lg mb-4">{{ __('Add member by email') }}</h3>
+
+                        @if (!$hasSpots && $isAdmin)
+                            <p class="text-sm text-amber-600 mb-3">
+                                {{ __('Daret is full. Adding a member will increase the total members count.') }}
+                            </p>
+                        @endif
 
                         <form method="POST" action="{{ route('darets.add-member', $daret) }}" class="space-y-3 max-w-md">
                             @csrf
@@ -276,12 +338,26 @@
             @if ($daret->members->contains('user_id', auth()->id()) || $daret->owner_id === auth()->id())
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900">
-                        <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                            </svg>
-                            {{ __('Group Chat') }}
-                        </h3>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-semibold text-lg flex items-center gap-2">
+                                <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                </svg>
+                                {{ __('Group Chat') }}
+                            </h3>
+                            @if ($user->hasRole('admin'))
+                                <form method="POST" action="{{ route('darets.messages.clear', $daret) }}" onsubmit="return confirm('{{ __('Are you sure you want to clear all chat messages? This cannot be undone.') }}');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                        {{ __('Clear Chat') }}
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
                         
                         <div id="chat-container" class="border border-gray-200 rounded-lg">
                             <div id="chat-messages" class="h-64 overflow-y-auto p-4 space-y-3 bg-gray-50">

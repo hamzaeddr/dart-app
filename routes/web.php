@@ -28,7 +28,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/darets/{daret}/join', [DaretController::class, 'join'])->name('darets.join');
     Route::post('/darets/{daret}/add-member', [DaretController::class, 'addMember'])->name('darets.add-member');
     Route::post('/darets/{daret}/update-recipient-order', [DaretController::class, 'updateRecipientOrder'])->name('darets.update-recipient-order');
+    Route::patch('/darets/{daret}', [DaretController::class, 'update'])->name('darets.update');
     Route::delete('/darets/{daret}', [DaretController::class, 'destroy'])->name('darets.destroy');
+    Route::delete('/darets/{daret}/members/{user}', [DaretController::class, 'removeMember'])->name('darets.remove-member');
 
     Route::get('/darets/{daret}/cycles/{cycle}', [ContributionController::class, 'showCycle'])
         ->name('darets.cycles.show');
@@ -43,6 +45,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/darets/{daret}/messages', [MessageController::class, 'index'])->name('darets.messages.index');
     Route::post('/darets/{daret}/messages', [MessageController::class, 'store'])->name('darets.messages.store');
+    Route::delete('/darets/{daret}/messages', [MessageController::class, 'clear'])->name('darets.messages.clear');
 });
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {

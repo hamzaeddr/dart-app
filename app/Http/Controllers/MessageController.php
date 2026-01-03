@@ -47,6 +47,19 @@ class MessageController extends Controller
         return response()->json($message, 201);
     }
 
+    public function clear(Request $request, Daret $daret)
+    {
+        $user = $request->user();
+
+        if (! $user->hasRole('admin')) {
+            abort(403, 'Only admins can clear chat.');
+        }
+
+        $daret->messages()->delete();
+
+        return redirect()->route('darets.show', $daret)->with('status', 'Chat cleared successfully.');
+    }
+
     protected function userCanAccessDaret(int $userId, Daret $daret): bool
     {
         if ($daret->owner_id === $userId) {

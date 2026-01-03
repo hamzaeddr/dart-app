@@ -167,8 +167,14 @@ class DaretController extends Controller
 
         $currentCount = $daret->members()->count();
 
+        // If daret is full, admin can still add members by increasing total_members
         if ($currentCount >= (int) $daret->total_members) {
-            return redirect()->route('darets.show', $daret)->with('error', 'This daret is already full.');
+            if (! $currentUser->hasRole('admin')) {
+                return redirect()->route('darets.show', $daret)->with('error', 'This daret is already full.');
+            }
+            // Admin is adding beyond capacity - increase total_members
+            $daret->total_members = $currentCount + 1;
+            $daret->save();
         }
 
         $maxPosition = $daret->members()->max('position_in_cycle');
@@ -181,6 +187,7 @@ class DaretController extends Controller
             'joined_at' => now(),
         ]);
 
+        // Regenerate cycles if we now have enough members
         if ($daret->members()->count() === (int) $daret->total_members) {
             $daret->generateCycles();
         }
@@ -226,6 +233,52 @@ class DaretController extends Controller
         $daret->delete();
 
         return redirect()->route('darets.index')->with('status', 'Daret deleted successfully.');
+    }
+
+    public function removeMember(Request $request, Daret $daret, User $user): RedirectResponse
+    {
+        $currentUser = $request->user();
+
+        if (! $currentUser->hasRole('admin')) {
+            abort(403, 'Only admins can remove members.');
+        }
+
+        if ($daret->owner_id === $user->id) {
+            return redirect()->route('darets.show', $daret)->with('error', 'Cannot remove the daret owner.');
+        }
+
+        $member = $daret->members()->where('user_id', $user->id)->first();
+
+        if (! $member) {
+            return redirect()->route('darets.show', $daret)->with('error', 'User is not a member of this daret.');
+        }
+
+        $member->delete();
+
+        // Update total_members count
+        $daret->total_members = max(1, $daret->members()->count());
+        $daret->save();
+
+        return redirect()->route('darets.show', $daret)->with('status', 'Member removed from daret.');
+    }
+
+    public function update(Request $request, Daret $daret): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (! $user->hasRole('admin')) {
+            abort(403, 'Only admins can update darets.');
+        }
+
+        $validated = $request->validate([
+            'name' => ['sometimes', 'string', 'max:255'],
+            'contribution_amount' => ['sometimes', 'numeric', 'min:0.01'],
+            'period' => ['sometimes', 'in:weekly,monthly'],
+        ]);
+
+        $daret->update($validated);
+
+        return redirect()->route('darets.show', $daret)->with('status', 'Daret updated successfully.');
     }
 
     protected function userCanAccessDaret(int $userId, Daret $daret): bool
