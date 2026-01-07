@@ -68,11 +68,16 @@ class ProfileController extends Controller
             'user_id' => $user->id,
         ]);
 
+        $revolutLink = $validated['revolut_link'] ?? null;
+        if ($revolutLink && !preg_match('/^https?:\/\//i', $revolutLink)) {
+            $revolutLink = 'https://' . $revolutLink;
+        }
+
         $profile->fill([
             'phone' => $validated['phone'] ?? null,
             'city' => $validated['city'] ?? null,
             'bio' => $validated['bio'] ?? null,
-            'revolut_link' => $validated['revolut_link'] ?? null,
+            'revolut_link' => $revolutLink,
         ]);
 
         $profile->save();

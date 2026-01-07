@@ -67,8 +67,14 @@
                         @endif
 
                         @if ($profile->revolut_link)
+                            @php
+                                $revolutUrl = $profile->revolut_link;
+                                if (!preg_match('/^https?:\/\//i', $revolutUrl)) {
+                                    $revolutUrl = 'https://' . $revolutUrl;
+                                }
+                            @endphp
                             <div class="mt-3">
-                                <a href="{{ $profile->revolut_link }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-5 py-3 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-md">
+                                <a href="{{ $revolutUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-5 py-3 bg-white border border-gray-300 text-black text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors shadow-md">
                                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
                                     </svg>

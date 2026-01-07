@@ -69,7 +69,7 @@
 
         <div>
             <x-input-label for="revolut_link" :value="__('Revolut Link')" />
-            <x-text-input id="revolut_link" name="revolut_link" type="url" class="mt-1 block w-full" :value="old('revolut_link', $profile->revolut_link ?? '')" placeholder="https://revolut.me/yourname" />
+            <x-text-input id="revolut_link" name="revolut_link" type="text" class="mt-1 block w-full" :value="old('revolut_link', $profile->revolut_link ?? '')" placeholder="revolut.me/yourname" />
             <x-input-error class="mt-2" :messages="$errors->get('revolut_link')" />
             <p class="mt-1 text-xs text-gray-500">{{ __('Your Revolut.me payment link (e.g., https://revolut.me/yourname)') }}</p>
         </div>
